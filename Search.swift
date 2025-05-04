@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+
 let MyApiKey = "9449b27e60mshb3b0d52118a4be1p15b4fbjsn5d30f72e0fbd"
+
 struct League: Identifiable, Codable {
     let id: Int
     let name: String
@@ -16,63 +18,98 @@ struct Team: Identifiable, Codable {
     let id: Int
     let name: String
 }
+
 struct Player: Identifiable, Codable {
     let id: Int
     let name: String
     let team: String?
 }
 
-
 struct SearchView: View {
     @State private var leagues: [League] = []
     @State private var teams: [Team] = []
     @State private var players: [Player] = []
     @State private var searchText = ""
+    @State private var isExpanded = false
     
     var filteredResults: [(id: Int, name: String, type: String)] {
-            let allData = leagues.map { ($0.id, $0.name, "League") } +
-                          teams.map { ($0.id, $0.name, "Team") } +
-                          players.map { ($0.id, $0.name, "Player") }
-            
-            if searchText.isEmpty {
-                return allData
-            } else {
-                return allData.filter { $0.1.localizedCaseInsensitiveContains(searchText) }
-            }
+        let allData = leagues.map { ($0.id, $0.name, "League") } +
+                      teams.map { ($0.id, $0.name, "Team") } +
+                      players.map { ($0.id, $0.name, "Player") }
+        
+        if searchText.isEmpty {
+            return allData
+        } else {
+            return allData.filter { $0.1.localizedCaseInsensitiveContains(searchText) }
+        }
     }
     
     var body: some View {
-        //Text("Reading Search.swift")
-        NavigationView {
-            List(filteredResults, id: \.id) { item in
-                VStack(alignment: .leading) {
-                    Text(item.name)
-                        .font(.headline)
-                    Text(item.type)
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+        VStack(spacing: 0) {
+            // Search Bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                TextField("Search leagues, teams, players", text: $searchText)
+                    .textFieldStyle(PlainTextFieldStyle())
+                if !searchText.isEmpty {
+                    Button(action: {
+                        searchText = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                    }
                 }
-                .background(.blue)
-                .multilineTextAlignment(.center)
-                .padding()
-                
             }
-            .searchable(text: $searchText, prompt: "Search leagues, teams, players")
-            .onAppear {
-                fetchLeagues()
-                fetchTeams()
-                fetchPlayers()
+            .padding(10)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+            .padding()
+            .onTapGesture {
+                isExpanded = true
             }
-            //.navigationTitle("Search")
+            
+            // Results List (only shown when expanded)
+            if isExpanded {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(filteredResults, id: \.id) { item in
+                            VStack(alignment: .leading) {
+                                Text(item.name)
+                                    .font(.headline)
+                                Text(item.type)
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .onTapGesture {
+                                isExpanded = false
+                                // Handle item selection here
+                            }
+                            
+                            Divider()
+                        }
+                    }
+                }
+                .background(Color(.systemBackground))
+                .transition(.move(edge: .top))
+            }
+            
+            Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.blue)
+        .background(Color(.systemBackground))
+        .onAppear {
+            fetchLeagues()
+            fetchTeams()
+            fetchPlayers()
+        }
     }
     
-    
     func fetchLeagues() {
-            let urlString = "https://api-rugby.p.rapidapi.com/leagues"
-            fetchData(urlString: urlString, type: [League].self) { self.leagues = $0 }
+        let urlString = "https://api-rugby.p.rapidapi.com/leagues"
+        fetchData(urlString: urlString, type: [League].self) { self.leagues = $0 }
     }
 
     func fetchTeams() {
@@ -101,6 +138,10 @@ struct SearchView: View {
             }
         }.resume()
     }
+}
+
+#Preview {
+    SearchView()
 }
 
 
