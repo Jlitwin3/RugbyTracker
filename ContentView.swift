@@ -6,6 +6,11 @@
 //
 
 import SwiftUI
+import Foundation
+
+// Make sure FetchAPI is accessible
+@_exported import struct Foundation.URL
+@_exported import class Foundation.URLSession
 
 struct ContentView: View {
     @State private var isLoggedIn = false
@@ -112,6 +117,8 @@ struct SearchResultsView: View {
     @State private var leagues: [League] = []
     @State private var teams: [Team] = []
     @State private var players: [Player] = []
+    @State private var isLoading = false
+    @State private var errorMessage: String?
     
     var filteredResults: [(id: Int, name: String, type: String)] {
         let allData = leagues.map { ($0.id, $0.name, "League") } +
@@ -126,62 +133,91 @@ struct SearchResultsView: View {
     }
     
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(filteredResults, id: \.id) { item in
-                    VStack(alignment: .leading) {
-                        Text(item.name)
-                            .font(.headline)
-                        Text(item.type)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+        ZStack {
+            if isLoading {
+                ProgressView("Loading...")
+                    .progressViewStyle(CircularProgressViewStyle())
+            } else if let error = errorMessage {
+                VStack {
+                    Text("Error: \(error)")
+                        .foregroundColor(.red)
+                    Button("Retry") {
+                        fetchAllData()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
-                    .background(Color(.systemBackground))
-                    
-                    Divider()
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
                 }
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(filteredResults, id: \.id) { item in
+                            VStack(alignment: .leading) {
+                                Text(item.name)
+                                    .font(.headline)
+                                Text(item.type)
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            
+                            Divider()
+                        }
+                    }
+                }
+                .background(Color(.systemBackground))
             }
         }
-        .background(Color(.systemBackground))
         .onAppear {
-            fetchLeagues()
-            fetchTeams()
-            fetchPlayers()
+            fetchAllData()
         }
     }
     
-    func fetchLeagues() {
-        let urlString = "https://api-rugby.p.rapidapi.com/leagues"
-        fetchData(urlString: urlString, type: [League].self) { self.leagues = $0 }
-    }
-
-    func fetchTeams() {
-        let urlString = "https://api-rugby.p.rapidapi.com/teams"
-        fetchData(urlString: urlString, type: [Team].self) { self.teams = $0 }
-    }
-
-    func fetchPlayers() {
-        let urlString = "https://api-rugby.p.rapidapi.com/players"
-        fetchData(urlString: urlString, type: [Player].self) { self.players = $0 }
-    }
-
-    func fetchData<T: Decodable>(urlString: String, type: T.Type, completion: @escaping (T) -> Void) {
-        guard let url = URL(string: urlString) else { return }
-
-        URLSession.shared.dataTask(with: url) { data, _, error in
-            if let data = data {
-                do {
-                    let decodedData = try JSONDecoder().decode(T.self, from: data)
-                    DispatchQueue.main.async {
-                        completion(decodedData)
-                    }
-                } catch {
-                    print("Decoding error: \(error)")
-                }
+    private func fetchAllData() {
+        isLoading = true
+        errorMessage = nil
+        
+        let group = DispatchGroup()
+        
+        group.enter()
+        FetchAPI.shared.fetchLeagues { result in
+            switch result {
+            case .success(let data):
+                self.leagues = data
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
             }
-        }.resume()
+            group.leave()
+        }
+        
+        group.enter()
+        FetchAPI.shared.fetchTeams { result in
+            switch result {
+            case .success(let data):
+                self.teams = data
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            }
+            group.leave()
+        }
+        
+        group.enter()
+        FetchAPI.shared.fetchPlayers { result in
+            switch result {
+            case .success(let data):
+                self.players = data
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            }
+            group.leave()
+        }
+        
+        group.notify(queue: .main) {
+            isLoading = false
+        }
     }
 }
 
