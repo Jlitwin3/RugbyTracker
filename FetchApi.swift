@@ -6,27 +6,28 @@
 //
 
 import Foundation
+import SwiftUI
 
-class FetchAPI {
-    static let shared = FetchAPI()
+public class FetchAPI: ObservableObject {
+    public static let shared = FetchAPI()
     private let apiKey = "9449b27e60mshb3b0d52118a4be1p15b4fbjsn5d30f72e0fbd"
     private let baseURL = "https://api-rugby.p.rapidapi.com"
     
     private init() {}
     
-    func fetchLeagues(completion: @escaping (Result<[League], Error>) -> Void) {
+    public func fetchLeagues(completion: @escaping (Result<[League], Error>) -> Void) {
         fetchData(endpoint: "/leagues", type: [League].self, completion: completion)
     }
     
-    func fetchTeams(completion: @escaping (Result<[Team], Error>) -> Void) {
+    public func fetchTeams(completion: @escaping (Result<[Team], Error>) -> Void) {
         fetchData(endpoint: "/teams", type: [Team].self, completion: completion)
     }
     
-    func fetchPlayers(completion: @escaping (Result<[Player], Error>) -> Void) {
+    public func fetchPlayers(completion: @escaping (Result<[Player], Error>) -> Void) {
         fetchData(endpoint: "/players", type: [Player].self, completion: completion)
     }
     
-    func fetchMatches(completion: @escaping (Result<[RugbyMatch], Error>) -> Void) {
+    public func fetchMatches(completion: @escaping (Result<[RugbyMatch], Error>) -> Void) {
         fetchData(endpoint: "/seasons", type: [RugbyMatch].self, completion: completion)
     }
     
@@ -73,11 +74,20 @@ class FetchAPI {
     }
 }
 
-struct RugbyMatch: Codable {
-    let matchID: Int
-    let homeTeam: String
-    let awayTeam: String
-    let score: String?
+public struct RugbyMatch: Codable, Identifiable {
+    public let id: Int
+    public let matchID: Int
+    public let homeTeam: String
+    public let awayTeam: String
+    public let score: String?
+    
+    public init(id: Int, matchID: Int, homeTeam: String, awayTeam: String, score: String?) {
+        self.id = id
+        self.matchID = matchID
+        self.homeTeam = homeTeam
+        self.awayTeam = awayTeam
+        self.score = score
+    }
 }
 
 struct RugbyMatchView: View {

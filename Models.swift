@@ -1,17 +1,33 @@
 import Foundation
 
-struct League: Identifiable, Codable {
-    let id: Int
-    let name: String
+public struct League: Identifiable, Codable {
+    public let id: Int
+    public let name: String
+    
+    public init(id: Int, name: String) {
+        self.id = id
+        self.name = name
+    }
 }
 
-struct Team: Identifiable, Codable {
-    let id: Int
-    let name: String
+public struct Team: Identifiable, Codable {
+    public let id: Int
+    public let name: String
+    
+    public init(id: Int, name: String) {
+        self.id = id
+        self.name = name
+    }
 }
 
-struct Player: Identifiable, Codable {
-    let id: Int
-    let name: String
-    let team: String?
+public struct Player: Identifiable, Codable {
+    public let id: Int
+    public let name: String
+    public let team: String?
+    
+    public init(id: Int, name: String, team: String?) {
+        self.id = id
+        self.name = name
+        self.team = team
+    }
 } 

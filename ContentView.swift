@@ -13,6 +13,7 @@ import Foundation
 @_exported import class Foundation.URLSession
 
 struct ContentView: View {
+    @StateObject private var fetchAPI = FetchAPI.shared
     @State private var isLoggedIn = false
     @State private var selectedTab = 0
     @State private var searchText = ""
@@ -67,18 +68,12 @@ struct ContentView: View {
                     .tag(0)
                     
                     // Games Tab
-                    VStack {
-                        Text("Games")
-                            .font(.largeTitle)
-                            .foregroundColor(.white)
-                            .padding()
-                        Spacer()
-                    }
-                    .tabItem {
-                        Image(systemName: "sportscourt.fill")
-                        Text("Games")
-                    }
-                    .tag(1)
+                    RugbyMatchView()
+                        .tabItem {
+                            Image(systemName: "sportscourt.fill")
+                            Text("Games")
+                        }
+                        .tag(1)
                     
                     // Leagues Tab
                     SearchResultsView(searchText: $searchText)
@@ -113,6 +108,7 @@ struct ContentView: View {
 }
 
 struct SearchResultsView: View {
+    @StateObject private var fetchAPI = FetchAPI.shared
     @Binding var searchText: String
     @State private var leagues: [League] = []
     @State private var teams: [Team] = []
@@ -183,7 +179,7 @@ struct SearchResultsView: View {
         let group = DispatchGroup()
         
         group.enter()
-        FetchAPI.shared.fetchLeagues { result in
+        fetchAPI.fetchLeagues { result in
             switch result {
             case .success(let data):
                 self.leagues = data
@@ -194,7 +190,7 @@ struct SearchResultsView: View {
         }
         
         group.enter()
-        FetchAPI.shared.fetchTeams { result in
+        fetchAPI.fetchTeams { result in
             switch result {
             case .success(let data):
                 self.teams = data
@@ -205,7 +201,7 @@ struct SearchResultsView: View {
         }
         
         group.enter()
-        FetchAPI.shared.fetchPlayers { result in
+        fetchAPI.fetchPlayers { result in
             switch result {
             case .success(let data):
                 self.players = data
